@@ -167,8 +167,19 @@ def draw_window(win, bird, pipes, base, score):
     pygame.display.update()
 
 
-def main():
-    bird = Bird(230, 350)
+def main(genomes, config):
+    nets = []
+    ge = []
+    birds = []
+
+    for g in genomes:
+        net = neat.nn.FeedForwardNetwork(g, config)
+        nets.append(net)
+        birds.append(Bird(230, 350))
+        g.fitness = 0
+        ge.append(g)
+
+
     base = Base(730)
     pipes = [Pipe(600)]
     win = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
@@ -187,15 +198,20 @@ def main():
         add_pipe = False
         rem = []
         for pipe in pipes:
-            if pipe.collide(bird):
-                pass
+            for x, bird in enumerate(birds):
+                if pipe.collide(bird):
+                    ge[x].fitness -= 1
+                    birds.pop(x)
+                    nets.pop(x)
+                    ge.pop(x)
+
+                if not pipe.passed and pipe.x < bird.x:
+                    pipe.passed = True
+                    add_pipe = True
+        
             if pipe.x + pipe.PIPE_TOP.get_width() < 0:
                 rem.append(pipe)
 
-            if not pipe.passed and pipe.x < bird.x:
-                pipe.passed = True
-                add_pipe = True
-        
             pipe.move()
 
         if add_pipe:
@@ -205,8 +221,9 @@ def main():
         for r in rem:
             pipes.remove(r)
 
-        if bird.y + bird.img.get_height() >= 730:
-            pass
+        for bird in birds:
+            if bird.y + bird.img.get_height() >= 730:
+                pass
 
         base.move()
         draw_window(win, bird, pipes, base, score)
@@ -215,3 +232,21 @@ def main():
     quit()
 
 main()
+
+def run(config_path):
+    config = neat.config.Config(neat.DefaultGenome, neat.DefaultReproduction,
+                        neat.DefaultSpeciesSet, neat.DefaultStagnation,
+                        config_path)
+
+    p = neat.Population(config)
+
+    p.add_reporter(neat.StdOutReporter(True))
+    stats = neat.StatisticsReporter()
+    p.add_reporter(stats)
+
+    winner = p.run(main,50)
+
+if __name__ == "__main__":
+    local_dir = os.path.dirname(__file__)
+    config_path = os.path.join(local_dir, "config-feedforward.txt")
+    run(config_path)
