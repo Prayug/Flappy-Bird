@@ -174,6 +174,8 @@ def draw_window(win, birds, pipes, base, score, gen):
 
 
 def main(genomes, config):
+    global GEN
+    GEN += 1   
     nets = []
     ge = []
     birds = []
@@ -196,7 +198,7 @@ def main(genomes, config):
 
     run = True
     while run:
-        clock.tick(30)
+        clock.tick(60)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
@@ -256,7 +258,7 @@ def main(genomes, config):
                 ge.pop(x)
 
         base.move()
-        draw_window(win, birds, pipes, base, score)
+        draw_window(win, birds, pipes, base, score, GEN)
                 
 def run(config_path):
     config = neat.config.Config(neat.DefaultGenome, neat.DefaultReproduction,
